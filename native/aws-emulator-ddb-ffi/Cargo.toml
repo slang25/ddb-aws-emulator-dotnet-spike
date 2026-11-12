@@ -1,0 +1,31 @@
+[package]
+name = "aws-emulator-ddb-ffi"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "C ABI over an in-process aws-emulator DynamoDB router, for P/Invoke from .NET"
+
+[lib]
+crate-type = ["cdylib"]
+
+# aws-emulator comes from the native/aws-emulator git submodule (pinned commit), with
+# native/patches/*.patch applied by native/apply-patches.sh before every build.
+# DynamoDB depends on these sibling service crates anyway (streams, kinesis, s3, kms, sts), so
+# registering them on the router costs nothing extra to build and lets DynamoDB's in-process
+# callbacks into them resolve.
+[dependencies]
+engine = { path = "../aws-emulator/vendor/engine", package = "aws-emulator-engine" }
+smithy-server-runtime = { path = "../aws-emulator/vendor/smithy-server-runtime", package = "aws-emulator-smithy-server-runtime" }
+service-com-amazonaws-dynamodb-dynamodb-20120810 = { path = "../aws-emulator/services/service-com-amazonaws-dynamodb-dynamodb-20120810" }
+service-com-amazonaws-dynamodbstreams-dynamodbstreams-20120810 = { path = "../aws-emulator/services/service-com-amazonaws-dynamodbstreams-dynamodbstreams-20120810" }
+service-com-amazonaws-kinesis-kinesis-20131202 = { path = "../aws-emulator/services/service-com-amazonaws-kinesis-kinesis-20131202" }
+service-com-amazonaws-s3-amazons3 = { path = "../aws-emulator/services/service-com-amazonaws-s3-amazons3" }
+service-com-amazonaws-kms-trentservice = { path = "../aws-emulator/services/service-com-amazonaws-kms-trentservice" }
+service-com-amazonaws-sts-awssecuritytokenservicev20110615 = { path = "../aws-emulator/services/service-com-amazonaws-sts-awssecuritytokenservicev20110615" }
+tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
+bytes = "1"
+http = "1"
+
+[profile.release]
+debug = "line-tables-only"
+strip = "debuginfo"

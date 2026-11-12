@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>Runs the aws-emulator DynamoDB implementation in-process and plugs it into the AWS SDK for .NET as its HTTP transport.</Description>
+    <NativeCrateDir>$(MSBuildThisFileDirectory)../../native/aws-emulator-ddb-ffi/</NativeCrateDir>
+    <NativeLibPath>$(NativeCrateDir)target/release/libaws_emulator_ddb_ffi.so</NativeLibPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.DynamoDBv2" />
+  </ItemGroup>
+
+  <!--
+    Apply native/patches to the aws-emulator submodule, then build the Rust cdylib (cargo is incremental, so this is a no-op once built) and ship it next
+    to the managed assembly; it flows to every project that references this one.
+    Pass -p:SkipNativeBuild=true to use an already-built library.
+  -->
+  <Target Name="BuildNativeEmulator" BeforeTargets="BeforeBuild" Condition="'$(SkipNativeBuild)' != 'true'">
+    <Exec Command="bash ../apply-patches.sh" WorkingDirectory="$(NativeCrateDir)" />
+    <Exec Command="cargo build --release" WorkingDirectory="$(NativeCrateDir)" />
+  </Target>
+
+  <ItemGroup>
+    <None Include="$(NativeLibPath)" Link="libaws_emulator_ddb_ffi.so" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
+</Project>

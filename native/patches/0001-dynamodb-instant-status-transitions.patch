@@ -1,0 +1,15 @@
+diff --git a/services/service-com-amazonaws-dynamodb-dynamodb-20120810/src/state.rs b/services/service-com-amazonaws-dynamodb-dynamodb-20120810/src/state.rs
+index 66eba532c..ef7569e48 100644
+--- a/services/service-com-amazonaws-dynamodb-dynamodb-20120810/src/state.rs
++++ b/services/service-com-amazonaws-dynamodb-dynamodb-20120810/src/state.rs
+@@ -69,7 +69,9 @@ pub type TagSet = BTreeMap<String, String>;
+ /// caller polls it and retries the delete — rather than vanishing between two of its
+ /// own requests. The due instant is stored on the table and materialised when a later
+ /// request reads it: nothing sleeps for it.
+-pub const STATUS_TRANSITION: Duration = Duration::from_secs(3);
++// PATCHED (ddb-aws-emulator-dotnet-spike): upstream is 3s. Zero makes table create/update/delete and
++// other status transitions settle instantly, which is what in-process unit tests want.
++pub const STATUS_TRANSITION: Duration = Duration::ZERO;
+ 
+ /// The maximum size of one item, 400 KB ("Service, Account, and Table Quotas" in the
+ /// Amazon DynamoDB Developer Guide: "The maximum item size in DynamoDB is 400 KB").

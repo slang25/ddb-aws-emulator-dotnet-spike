@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/AwsEmulator.DynamoDb/AwsEmulator.DynamoDb.csproj" />
+    <ProjectReference Include="../../src/AwsEmulator.Sqs/AwsEmulator.Sqs.csproj" />
+    <ProjectReference Include="../../src/AwsEmulator.Sns/AwsEmulator.Sns.csproj" />
+    <ProjectReference Include="../../src/AwsEmulator.EventBridge/AwsEmulator.EventBridge.csproj" />
+    <ProjectReference Include="../../src/AwsEmulator.S3/AwsEmulator.S3.csproj" />
+  </ItemGroup>
+</Project>

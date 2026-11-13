@@ -2,15 +2,15 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 using Xunit;
 
-namespace AwsEmulator.DynamoDb.Tests;
+namespace AwsEmulator.Tests;
 
-public sealed class DynamoDbEmulatorTests : IDisposable
+public sealed class DynamoDbTests : IDisposable
 {
-    private readonly DynamoDbEmulator _emulator = new();
+    private readonly EmbeddedAwsEmulator _emulator = new();
     private readonly IAmazonDynamoDB _ddb;
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    public DynamoDbEmulatorTests() => _ddb = _emulator.CreateClient();
+    public DynamoDbTests() => _ddb = _emulator.CreateDynamoDbClient();
 
     public void Dispose()
     {
@@ -114,11 +114,11 @@ public sealed class DynamoDbEmulatorTests : IDisposable
     {
         await CreateTable(_ddb, "Things");
 
-        using var secondClient = _emulator.CreateClient();
+        using var secondClient = _emulator.CreateDynamoDbClient();
         Assert.Contains("Things", (await secondClient.ListTablesAsync(Ct)).TableNames);
 
-        using var other = new DynamoDbEmulator();
-        using var otherClient = other.CreateClient();
+        using var other = new EmbeddedAwsEmulator();
+        using var otherClient = other.CreateDynamoDbClient();
         Assert.Empty((await otherClient.ListTablesAsync(Ct)).TableNames ?? []);
     }
 

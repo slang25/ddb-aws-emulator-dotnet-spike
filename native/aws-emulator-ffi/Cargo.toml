@@ -1,0 +1,49 @@
+[package]
+name = "aws-emulator-ffi"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "C ABI over an in-process aws-emulator router, for P/Invoke from .NET"
+
+[lib]
+crate-type = ["cdylib"]
+
+# aws-emulator comes from the native/aws-emulator git submodule (pinned commit), with
+# native/patches/*.patch applied by native/apply-patches.sh before every build.
+#
+# The services the .NET libraries expose are DynamoDB, SQS, SNS, EventBridge and S3. The rest of
+# the list is their transitive closure: those crates are compiled in anyway, and registering them
+# on the router lets the in-process calls the requested services make to each other (SNS -> SQS,
+# EventBridge -> targets, S3 -> notifications, ...) resolve. Keep this list in sync with
+# `register_services` in src/lib.rs.
+[dependencies]
+engine = { path = "../aws-emulator/vendor/engine", package = "aws-emulator-engine" }
+smithy-server-runtime = { path = "../aws-emulator/vendor/smithy-server-runtime", package = "aws-emulator-smithy-server-runtime" }
+service-com-amazonaws-cloudhsmv2-baldrapiservice = { path = "../aws-emulator/services/service-com-amazonaws-cloudhsmv2-baldrapiservice" }
+service-com-amazonaws-cloudwatch-graniteserviceversion20100801 = { path = "../aws-emulator/services/service-com-amazonaws-cloudwatch-graniteserviceversion20100801" }
+service-com-amazonaws-cloudwatchlogs-logs-20140328 = { path = "../aws-emulator/services/service-com-amazonaws-cloudwatchlogs-logs-20140328" }
+service-com-amazonaws-cognitoidentityprovider-awscognitoidentityproviderservice = { path = "../aws-emulator/services/service-com-amazonaws-cognitoidentityprovider-awscognitoidentityproviderservice" }
+service-com-amazonaws-dynamodb-dynamodb-20120810 = { path = "../aws-emulator/services/service-com-amazonaws-dynamodb-dynamodb-20120810" }
+service-com-amazonaws-dynamodbstreams-dynamodbstreams-20120810 = { path = "../aws-emulator/services/service-com-amazonaws-dynamodbstreams-dynamodbstreams-20120810" }
+service-com-amazonaws-ecr-amazonec2containerregistry-v20150921 = { path = "../aws-emulator/services/service-com-amazonaws-ecr-amazonec2containerregistry-v20150921" }
+service-com-amazonaws-eventbridge-awsevents = { path = "../aws-emulator/services/service-com-amazonaws-eventbridge-awsevents" }
+service-com-amazonaws-glue-awsglue = { path = "../aws-emulator/services/service-com-amazonaws-glue-awsglue" }
+service-com-amazonaws-iam-awsidentitymanagementv20100508 = { path = "../aws-emulator/services/service-com-amazonaws-iam-awsidentitymanagementv20100508" }
+service-com-amazonaws-kinesis-kinesis-20131202 = { path = "../aws-emulator/services/service-com-amazonaws-kinesis-kinesis-20131202" }
+service-com-amazonaws-kms-trentservice = { path = "../aws-emulator/services/service-com-amazonaws-kms-trentservice" }
+service-com-amazonaws-lambda-awsgirapiservice = { path = "../aws-emulator/services/service-com-amazonaws-lambda-awsgirapiservice" }
+service-com-amazonaws-s3-amazons3 = { path = "../aws-emulator/services/service-com-amazonaws-s3-amazons3" }
+service-com-amazonaws-s3tables-s3tablebuckets = { path = "../aws-emulator/services/service-com-amazonaws-s3tables-s3tablebuckets" }
+service-com-amazonaws-signer-wallabyservice = { path = "../aws-emulator/services/service-com-amazonaws-signer-wallabyservice" }
+service-com-amazonaws-sns-amazonsimplenotificationservice = { path = "../aws-emulator/services/service-com-amazonaws-sns-amazonsimplenotificationservice" }
+service-com-amazonaws-sqs-amazonsqs = { path = "../aws-emulator/services/service-com-amazonaws-sqs-amazonsqs" }
+service-com-amazonaws-ssoadmin-swbexternalservice = { path = "../aws-emulator/services/service-com-amazonaws-ssoadmin-swbexternalservice" }
+service-com-amazonaws-sts-awssecuritytokenservicev20110615 = { path = "../aws-emulator/services/service-com-amazonaws-sts-awssecuritytokenservicev20110615" }
+service-com-amazonaws-wafv2-awswaf-20190729 = { path = "../aws-emulator/services/service-com-amazonaws-wafv2-awswaf-20190729" }
+tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
+bytes = "1"
+http = "1"
+
+[profile.release]
+debug = "line-tables-only"
+strip = "debuginfo"

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace AwsEmulator.DynamoDb;
+namespace AwsEmulator;
 
 /// <summary>
 /// An <see cref="HttpMessageHandler"/> that serves every request from an in-process aws-emulator

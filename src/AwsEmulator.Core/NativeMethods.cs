@@ -1,23 +1,23 @@
 using System.Runtime.InteropServices;
 
-namespace AwsEmulator.DynamoDb;
+namespace AwsEmulator;
 
-/// <summary>P/Invoke surface of the Rust <c>aws-emulator-ddb-ffi</c> cdylib.</summary>
+/// <summary>P/Invoke surface of the Rust <c>aws-emulator-ffi</c> cdylib.</summary>
 internal static unsafe partial class NativeMethods
 {
-    private const string Library = "aws_emulator_ddb_ffi";
+    private const string Library = "aws_emulator_ffi";
 
-    [LibraryImport(Library, EntryPoint = "ddb_emulator_new")]
+    [LibraryImport(Library, EntryPoint = "aws_emulator_new")]
     internal static partial EmulatorSafeHandle EmulatorNew();
 
-    [LibraryImport(Library, EntryPoint = "ddb_emulator_free")]
+    [LibraryImport(Library, EntryPoint = "aws_emulator_free")]
     internal static partial void EmulatorFree(nint emulator);
 
     /// <summary>
     /// Copies the request, returns immediately, and later invokes <paramref name="callback"/> exactly
     /// once on a native worker thread. The response pointers are only valid during the callback.
     /// </summary>
-    [LibraryImport(Library, EntryPoint = "ddb_emulator_send")]
+    [LibraryImport(Library, EntryPoint = "aws_emulator_send")]
     internal static partial void EmulatorSend(
         EmulatorSafeHandle emulator,
         byte* method, nuint methodLength,

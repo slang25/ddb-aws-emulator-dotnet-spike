@@ -1,12 +1,13 @@
-//! C ABI over an in-process aws-emulator router serving DynamoDB.
+//! C ABI over an in-process aws-emulator router serving DynamoDB, SQS, SNS, EventBridge, S3 and
+//! the services they call into.
 //!
-//! The .NET side (`AwsEmulator.DynamoDb`) P/Invokes these functions from an
+//! The .NET side (`AwsEmulator.Core`) P/Invokes these functions from an
 //! `HttpMessageHandler`, so the AWS SDK for .NET talks to the emulator with no socket.
 //!
-//! Lifecycle: `ddb_emulator_new` → many `ddb_emulator_send` → `ddb_emulator_free`.
+//! Lifecycle: `aws_emulator_new` → many `aws_emulator_send` → `aws_emulator_free`.
 //! Each emulator owns a fresh in-memory engine; two emulators never share state.
 //!
-//! `ddb_emulator_send` is asynchronous: it copies the request, returns at once, and later
+//! `aws_emulator_send` is asynchronous: it copies the request, returns at once, and later
 //! invokes `callback` exactly once on a runtime worker thread. The response buffers handed to
 //! the callback are only valid for the duration of the callback; the caller must copy them.
 
@@ -15,6 +16,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{Arc, OnceLock};
 
 use engine::InMemoryEngine;
+use smithy_server_runtime::service::Service;
 use smithy_server_runtime::MultiServiceRouter;
 
 /// The emulator binary runs its workers on 16 MiB stacks; operation handlers are deep.
@@ -24,7 +26,7 @@ fn runtime() -> &'static tokio::runtime::Runtime {
     static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
     RUNTIME.get_or_init(|| {
         tokio::runtime::Builder::new_multi_thread()
-            .thread_name("aws-emulator-ddb")
+            .thread_name("aws-emulator")
             .thread_stack_size(WORKER_STACK_SIZE)
             .enable_all()
             .build()
@@ -49,36 +51,42 @@ pub type SendCallback = extern "C" fn(
     body_len: usize,
 );
 
+/// Register one service. `#[inline(never)]` keeps each service's (large) constructor frame
+/// separate instead of letting them coalesce into one huge frame, as upstream's router does.
 #[inline(never)]
+fn register<S: Service>(
+    router: &mut MultiServiceRouter,
+    engine: &Arc<InMemoryEngine>,
+    new: fn(Arc<InMemoryEngine>) -> S,
+) {
+    router.register_service(new(engine.clone()));
+}
+
+/// Every service crate this library links (see Cargo.toml), all on one engine so cross-service
+/// calls (SNS -> SQS, EventBridge -> targets, S3 -> notifications, ...) resolve in-process.
 fn build_router(engine: Arc<InMemoryEngine>) -> MultiServiceRouter {
     let mut router = MultiServiceRouter::new();
-    router.register_service(
-        service_com_amazonaws_dynamodb_dynamodb_20120810::EmulatedService::new(engine.clone()),
-    );
-    router.register_service(
-        service_com_amazonaws_dynamodbstreams_dynamodbstreams_20120810::EmulatedService::new(
-            engine.clone(),
-        ),
-    );
-    router.register_service(service_com_amazonaws_kinesis_kinesis_20131202::EmulatedService::new(
-        engine.clone(),
-    ));
-    router.register_service(service_com_amazonaws_s3_amazons3::EmulatedService::new(
-        engine.clone(),
-    ));
-    router.register_service(service_com_amazonaws_kms_trentservice::EmulatedService::new(
-        engine.clone(),
-    ));
-    router.register_service(
-        service_com_amazonaws_sts_awssecuritytokenservicev20110615::EmulatedService::new(
-            engine.clone(),
-        ),
-    );
-    router.register_service(
-        service_com_amazonaws_cloudwatch_graniteserviceversion20100801::EmulatedService::new(
-            engine,
-        ),
-    );
+    register(&mut router, &engine, service_com_amazonaws_cloudhsmv2_baldrapiservice::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_cloudwatch_graniteserviceversion20100801::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_cloudwatchlogs_logs_20140328::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_cognitoidentityprovider_awscognitoidentityproviderservice::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_dynamodb_dynamodb_20120810::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_dynamodbstreams_dynamodbstreams_20120810::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_ecr_amazonec2containerregistry_v20150921::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_eventbridge_awsevents::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_glue_awsglue::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_iam_awsidentitymanagementv20100508::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_kinesis_kinesis_20131202::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_kms_trentservice::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_lambda_awsgirapiservice::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_s3_amazons3::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_s3tables_s3tablebuckets::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_signer_wallabyservice::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_sns_amazonsimplenotificationservice::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_sqs_amazonsqs::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_ssoadmin_swbexternalservice::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_sts_awssecuritytokenservicev20110615::EmulatedService::new);
+    register(&mut router, &engine, service_com_amazonaws_wafv2_awswaf_20190729::EmulatedService::new);
     // Signature checks off: the SDK can sign with any dummy credentials.
     router.set_request_authentication(false);
     router
@@ -86,7 +94,7 @@ fn build_router(engine: Arc<InMemoryEngine>) -> MultiServiceRouter {
 
 /// Create an emulator over a fresh in-memory engine. Returns null on failure.
 #[no_mangle]
-pub extern "C" fn ddb_emulator_new() -> *mut Emulator {
+pub extern "C" fn aws_emulator_new() -> *mut Emulator {
     let result = catch_unwind(|| {
         // Build on a runtime worker: service construction may expect a tokio context and a
         // big stack.
@@ -105,9 +113,9 @@ pub extern "C" fn ddb_emulator_new() -> *mut Emulator {
 /// Free an emulator. In-flight requests keep their own clone of the router and finish normally.
 ///
 /// # Safety
-/// `emulator` must come from `ddb_emulator_new` and not be used afterwards.
+/// `emulator` must come from `aws_emulator_new` and not be used afterwards.
 #[no_mangle]
-pub unsafe extern "C" fn ddb_emulator_free(emulator: *mut Emulator) {
+pub unsafe extern "C" fn aws_emulator_free(emulator: *mut Emulator) {
     if !emulator.is_null() {
         drop(Box::from_raw(emulator));
     }
@@ -156,7 +164,7 @@ fn fail(callback: SendCallback, context: *mut c_void, message: &str) {
 /// # Safety
 /// `emulator` must be live; each `(ptr, len)` pair must describe readable memory (or be null/0).
 #[no_mangle]
-pub unsafe extern "C" fn ddb_emulator_send(
+pub unsafe extern "C" fn aws_emulator_send(
     emulator: *const Emulator,
     method: *const u8,
     method_len: usize,

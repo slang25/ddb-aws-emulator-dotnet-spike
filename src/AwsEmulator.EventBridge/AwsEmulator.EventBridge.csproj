@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>AwsEmulator</RootNamespace>
+    <Description>In-process EventBridge for the AWS SDK for .NET, backed by aws-emulator.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.EventBridge" />
+    <ProjectReference Include="../AwsEmulator.Core/AwsEmulator.Core.csproj" />
+  </ItemGroup>
+</Project>

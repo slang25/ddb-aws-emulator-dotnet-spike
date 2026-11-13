@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AwsEmulator.Core/AwsEmulator.Core.csproj" />
+    <Project Path="src/AwsEmulator.DynamoDb/AwsEmulator.DynamoDb.csproj" />
+    <Project Path="src/AwsEmulator.EventBridge/AwsEmulator.EventBridge.csproj" />
+    <Project Path="src/AwsEmulator.S3/AwsEmulator.S3.csproj" />
+    <Project Path="src/AwsEmulator.Sns/AwsEmulator.Sns.csproj" />
+    <Project Path="src/AwsEmulator.Sqs/AwsEmulator.Sqs.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/AwsEmulator.Sample/AwsEmulator.Sample.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AwsEmulator.Tests/AwsEmulator.Tests.csproj" />
+  </Folder>
+</Solution>

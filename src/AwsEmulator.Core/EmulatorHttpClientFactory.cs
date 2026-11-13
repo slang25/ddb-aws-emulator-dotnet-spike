@@ -1,6 +1,6 @@
 using Amazon.Runtime;
 
-namespace AwsEmulator.DynamoDb;
+namespace AwsEmulator;
 
 /// <summary>
 /// Hands the AWS SDK <see cref="HttpClient"/>s that route through the in-process emulator.

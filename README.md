@@ -33,10 +33,10 @@ AmazonDynamoDBClient
 - **`native/aws-emulator-ddb-ffi`** is a small Rust `cdylib`. aws-emulator's own embedded facade
   (`AwsEmulatorEmbedded`) builds a router over **all ~437 services**. This crate instead builds a
   `MultiServiceRouter` that registers only DynamoDB and the sibling crates it already depends on
-  (Streams, Kinesis, S3, KMS, STS). It exposes a C ABI with three functions: `new`, `free`, and an
+  (Streams, Kinesis, S3, KMS, STS, CloudWatch). It exposes a C ABI with three functions: `new`, `free`, and an
   async `send`. `send` copies the request, spawns `router.dispatch` on a tokio runtime with
   16 MB worker stacks (matching the emulator binary), and calls a completion callback.
-- **`native/aws-emulator`** is a shallow git submodule of aws-emulator pinned to commit `7753983c`.
+- **`native/aws-emulator`** is a shallow git submodule of aws-emulator pinned to commit `67fd1536` (v1.0.342).
   The FFI crate path-depends on it. **`native/patches/*.patch`** are applied to it by
   `native/apply-patches.sh` (idempotent) before every native build.
 - **`src/AwsEmulator.DynamoDb`** is the .NET library. `EmulatorHttpMessageHandler` serialises the
@@ -70,7 +70,7 @@ dotnet test
 | Network | None. `strace -e connect` shows zero `connect()` calls. Telemetry is never initialised because we skip the embedded facade. |
 | Startup | About 60 ms per emulator instance. |
 | Latency | About 170 µs per `GetItem` round trip through the full SDK pipeline (Debug build). |
-| Native lib size | 61 MB stripped (560 MB with debug info). |
+| Native lib size | 85 MB stripped (v1.0.342; 61 MB at v1.0.322 before DynamoDB pulled in CloudWatch). |
 | Cold build | About 8 min and 5 GB of `target/`, mostly DynamoDB's transitive service crates. |
 | **Table creation takes 3 s (patched out)** | Upstream holds new tables in `CREATING` for a hardcoded `STATUS_TRANSITION = 3s` (`service-dynamodb/src/state.rs`). Item operations return `ResourceNotFoundException` until the table is `ACTIVE`. Nothing exposes it: no `EmbeddedOptions` field, CLI flag, env var, config key, or swappable clock. The same constant also gates UpdateTable, DeleteTable, TTL, backups, replicas, and resource policies. We patch it to `Duration::ZERO`; see "Patches". |
 

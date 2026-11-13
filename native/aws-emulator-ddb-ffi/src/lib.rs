@@ -70,7 +70,14 @@ fn build_router(engine: Arc<InMemoryEngine>) -> MultiServiceRouter {
         engine.clone(),
     ));
     router.register_service(
-        service_com_amazonaws_sts_awssecuritytokenservicev20110615::EmulatedService::new(engine),
+        service_com_amazonaws_sts_awssecuritytokenservicev20110615::EmulatedService::new(
+            engine.clone(),
+        ),
+    );
+    router.register_service(
+        service_com_amazonaws_cloudwatch_graniteserviceversion20100801::EmulatedService::new(
+            engine,
+        ),
     );
     // Signature checks off: the SDK can sign with any dummy credentials.
     router.set_request_authentication(false);

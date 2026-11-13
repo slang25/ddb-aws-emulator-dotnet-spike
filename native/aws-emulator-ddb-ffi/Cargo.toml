@@ -10,7 +10,8 @@ crate-type = ["cdylib"]
 
 # aws-emulator comes from the native/aws-emulator git submodule (pinned commit), with
 # native/patches/*.patch applied by native/apply-patches.sh before every build.
-# DynamoDB depends on these sibling service crates anyway (streams, kinesis, s3, kms, sts), so
+# DynamoDB depends on these sibling service crates anyway (streams, kinesis, s3, kms, sts,
+# cloudwatch), so
 # registering them on the router costs nothing extra to build and lets DynamoDB's in-process
 # callbacks into them resolve.
 [dependencies]
@@ -22,6 +23,7 @@ service-com-amazonaws-kinesis-kinesis-20131202 = { path = "../aws-emulator/servi
 service-com-amazonaws-s3-amazons3 = { path = "../aws-emulator/services/service-com-amazonaws-s3-amazons3" }
 service-com-amazonaws-kms-trentservice = { path = "../aws-emulator/services/service-com-amazonaws-kms-trentservice" }
 service-com-amazonaws-sts-awssecuritytokenservicev20110615 = { path = "../aws-emulator/services/service-com-amazonaws-sts-awssecuritytokenservicev20110615" }
+service-com-amazonaws-cloudwatch-graniteserviceversion20100801 = { path = "../aws-emulator/services/service-com-amazonaws-cloudwatch-graniteserviceversion20100801" }
 tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
 bytes = "1"
 http = "1"

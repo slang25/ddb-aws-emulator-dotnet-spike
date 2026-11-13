@@ -1,8 +1,8 @@
 diff --git a/services/service-com-amazonaws-dynamodb-dynamodb-20120810/src/state.rs b/services/service-com-amazonaws-dynamodb-dynamodb-20120810/src/state.rs
-index 66eba532c..ef7569e48 100644
+index 35de085c1..2f535c900 100644
 --- a/services/service-com-amazonaws-dynamodb-dynamodb-20120810/src/state.rs
 +++ b/services/service-com-amazonaws-dynamodb-dynamodb-20120810/src/state.rs
-@@ -69,7 +69,9 @@ pub type TagSet = BTreeMap<String, String>;
+@@ -70,7 +70,9 @@ pub type TagSet = BTreeMap<String, String>;
  /// caller polls it and retries the delete — rather than vanishing between two of its
  /// own requests. The due instant is stored on the table and materialised when a later
  /// request reads it: nothing sleeps for it.
